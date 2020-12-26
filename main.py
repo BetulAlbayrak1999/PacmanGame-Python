@@ -1,207 +1,111 @@
-import coin
-import map
-import readfromoutside
-import pacman
-import solid_data
-from solid_data import OPPOSITE_MOVES as op
+import pygame
+import math
+from pygame.locals import *
 from OpenGL.GL import *
-from OpenGL.GL import glBegin
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
-import sys
-ESCAPE = '\033'
-
-maze1 = [[0 for x in range(20)] for y in range(20)]
-maze2 = [[0 for x in range(20)] for y in range(20)]
-maze3 = [[0 for x in range(20)] for y in range(20)]
-maze4 = [[0 for x in range(20)] for y in range(20)]
-pacmanRotate = 0
-
-class Main:
-    def draw(self):
-        global maze1, maze2, maze3, maze4
-        glClearColor(1.0, 1.0, 1.0, 1.0)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(-1.0, 20.0, -1.0, 15.0, 0, 10)
-        glActiveTexture(GL_TEXTURE0)
-        add_image = readfromoutside.Readfromoutside()
-        add_image.LoadTexture("tre2.jpg", 1)
-        add_image.LoadTexture("floor3.jpg", 2)
-        add_image.LoadTexture("co.jpg", 3)
-        glEnable(GL_TEXTURE_2D)
-        Read_text = readfromoutside.Readfromoutside()
-        Draw_maze = map.Map()
-        Call_coin = coin.Coin()
-        Call_pacman = pacman.PacMan(7.6, 0.4, 1)
-
-        # gluLookAt(0.0, 0.0,8.0, -2.0, 1.0, 0.0, 2.0, 50.0, -8.0)
-        gluLookAt(0.0, -1.0, 8.0, -2.0, 0.0, 4.0, -9.0, 156.0, 17.0)
-        if Call_coin.score() == 0:
-            # draw pacman
-            glPushMatrix()
-            Call_pacman.drawPacman()
-            glPopMatrix()
-            glPushMatrix()
-            maze1 = Read_text.readObj("maze1.txt", 1)
-            Call_coin.drawcoin(0, 0, maze1)
-            Draw_maze.drawmaze(0, 0, maze1)
-            glPopMatrix()
-        if Call_coin.score() > 500:
-            # draw pacman
-            glPushMatrix()
-            Call_pacman.drawPacman()
-            glPopMatrix()
-            glPushMatrix()
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-            maze2 = Read_text.readObj("maze2.txt", 2)
-            Draw_maze.drawmaze(0, 0, maze2)
-            Call_coin.drawcoin(0, 0, maze2)
-            glPopMatrix()
-        if Call_coin.score() > 100:
-            # draw pacman
-            glPushMatrix()
-            Call_pacman.drawPacman()
-            glPopMatrix()
-            glPushMatrix()
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-            maze3 = Read_text.readObj("maze3.txt", 3)
-            Draw_maze.drawmaze(0, 0, maze3)
-            Call_coin.drawcoin(0, 0, maze3)
-            glPopMatrix()
-        if Call_coin.score() > 150:
-            # draw pacman
-            glPushMatrix()
-            Call_pacman.drawPacman()
-            glPopMatrix()
-            glPushMatrix()
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-            maze4 = Read_text.readObj("maze4.txt", 4)
-            Draw_maze.drawmaze(20, 20, maze4)
-            Call_coin.drawcoin(0, 0, maze4)
-            glPopMatrix()
-        glFlush()
+from PIL import Image
+import numpy
 
 
-    def key_pressed(self, key, x, y):
-        """The function called whenever a key is pressed.
-        Note the use of Python tuples to pass in: (key, x, y)
-
-        :param args: string represented pushed key
-        """
-
-        if key == ESCAPE:
-            sys.exit()
-
-    def key_pressed_special(self, key, x, y):
-        """The function called whenever a key is pressed.
-        Note the use of Python tuples to pass in: (key, x, y)
-
-        :param args: integer represented pushed key
-        """
-        # działanie klawiszy w osobnej funkcji
-
-        if key == 100:
-            self.pacman.next_direction = solid_data.OPPOSITE_MOVES('W')
-
-        elif key == 102:
-            self.pacman.next_direction = solid_data.OPPOSITE_MOVES('E')
-
-        elif key == 101:
-            self.pacman.next_direction = solid_data.OPPOSITE_MOVES('N')
-
-        elif key == 103:
-            self.pacman.next_direction = solid_data.OPPOSITE_MOVES('S')
-
-    def key_pressed_special_up(self, key, x, y):
-        """"""
-        pass
-
-    def pacman_move(self):
-        """"""
-        directions = self.board.knots.get(
-            (self.pacman.x, self.pacman.z)
-        )
-        if not self.pacman.was_eaten:
-            if directions:
-                if self.pacman.next_direction in directions:
-                    self.pacman.direction = self.pacman.next_direction
-                    self.pacman.move()
-                elif self.pacman.direction in directions:
-                    self.pacman.move()
-                else:
-                    pass   # PacMan no moves
-
-            elif self.pacman.next_direction == op[self.pacman.direction]:
-                self.pacman.direction = self.pacman.next_direction
-                self.pacman.move()
-            else:
-                self.pacman.move()
-
-
-    def InitGL(self):
-        glClearColor(0.0, 0.0, 0.0, 0.0)
-        glClearDepth(1.0)
-        glDepthFunc(GL_LESS)
-        glEnable(GL_DEPTH_TEST)
-        glShadeModel(GL_SMOOTH)
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glMatrixMode(GL_MODELVIEW)
-
+def read_texture(filename):
+    """
+    Reads an image file and converts to a OpenGL-readable textID format
+    """
+    img = Image.open(filename)
+    img_data = numpy.array(list(img.getdata()), numpy.int8)
+    textID = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, textID)
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+                 img.size[0], img.size[1], 0, GL_RGB, GL_UNSIGNED_BYTE, img_data)
+    return textID
 
 
 def main():
-    glutInit(sys.argv)
-    glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH)
-    glutInitWindowSize(1000, 650)
-    glutInitWindowPosition(0, 0)
-    glutCreateWindow(b"PACMAN GAME NEW UPDATE")
-    glClearColor(0.0, 0.0, 0.0, 0.0)
-    start_game = Main()
-    glutDisplayFunc(start_game.draw)
-    glutIdleFunc(start_game.draw)
-    # glutMouseWheelFunc(MouseWheel)
-    # glutMotionFunc(MouseWheelMotion)
-    # Register the function called when the keyboard is pressed.
-    glutKeyboardFunc(start_game.key_pressed)
-    glutSpecialFunc(start_game.key_pressed_special)
-    glutSpecialUpFunc(start_game.key_pressed_special_up)
-    start_game.InitGL()
-    glutMainLoop()
+    pygame.init()
+    display = (400, 400)
+    pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
+    pygame.display.set_caption('PyOpenGLobe')
+    pygame.key.set_repeat(1, 10)    # allows press and hold of buttons
+    gluPerspective(40, (display[0]/display[1]), 0.1, 50.0)
+    glTranslatef(0.0, 0.0, -5)    # sets initial zoom so we can see globe
+    lastPosX = 0
+    lastPosY = 0
+    texture = read_texture('zzz.png')
+
+    while True:
+        for event in pygame.event.get():    # user avtivities are called events
+
+            # Exit cleanly if user quits window
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+            # Rotation with arrow keys
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    glRotatef(1, 0, 1, 0)
+                if event.key == pygame.K_RIGHT:
+                    glRotatef(1, 0, -1, 0)
+                if event.key == pygame.K_UP:
+                    glRotatef(1, -1, 0, 0)
+                if event.key == pygame.K_DOWN:
+                    glRotatef(1, 1, 0, 0)
+
+            # Zoom in and out with mouse wheel
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 4:  # wheel rolled up
+                    glScaled(1.05, 1.05, 1.05)
+                if event.button == 5:  # wheel rolled down
+                    glScaled(0.95, 0.95, 0.95)
+
+            # Rotate with mouse click and drag
+            if event.type == pygame.MOUSEMOTION:
+                x, y = event.pos
+                dx = x - lastPosX
+                dy = y - lastPosY
+                mouseState = pygame.mouse.get_pressed()
+                if mouseState[0]:
+
+                    modelView = (GLfloat * 16)()
+                    mvm = glGetFloatv(GL_MODELVIEW_MATRIX, modelView)
+
+                    # To combine x-axis and y-axis rotation
+                    temp = (GLfloat * 3)()
+                    temp[0] = modelView[0]*dy + modelView[1]*dx
+                    temp[1] = modelView[4]*dy + modelView[5]*dx
+                    temp[2] = modelView[8]*dy + modelView[9]*dx
+                    norm_xy = math.sqrt(temp[0]*temp[0] + temp[1]
+                                        * temp[1] + temp[2]*temp[2])
+                    glRotatef(math.sqrt(dx*dx+dy*dy),
+                              temp[0]/norm_xy, temp[1]/norm_xy, temp[2]/norm_xy)
+
+                lastPosX = x
+                lastPosY = y
+
+        # Creates Sphere and wraps texture
+        glEnable(GL_DEPTH_TEST)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        qobj = gluNewQuadric()
+        gluQuadricTexture(qobj, GL_TRUE)
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, texture)
+        gluSphere(qobj, 1, 50, 50)
+        gluDeleteQuadric(qobj)
+        glDisable(GL_TEXTURE_2D)
+
+        # Displays pygame window
+        pygame.display.flip()
+        pygame.time.wait(10)
 
 
 main()
-   # pacman key press
-'''
-    def key_pressed(self, *args, null):
-        if args[0] == b'':
-            sys.exit()
-        glutPostRedisplay()
-
-    def key_pressed_special(self, *args, null):
-
-        if args[0] == 100:
-            self.z -= self.step
-            self.rotate = 90
-
-        elif args[0] == 102:
-            self.z += self.step
-            self.rotate = 270
-
-        elif args[0] == 101:
-            self.x -= self.step
-            self.rotate = 180
-
-        elif args[0] == 103:
-            self.x += self.step
-            self.rotate = 0
-
-            self.x, self.z = round(self.x, 2), round(self.z, 2)
-
-        glutPostRedisplay()
-
-    def key_pressed_special_up(self,*args, null):
-        pass
-'''
