@@ -2,20 +2,23 @@ import coin
 import map
 import readfromoutside
 import pacman
-import solid_data
-from solid_data import OPPOSITE_MOVES as op
 from OpenGL.GL import *
 from OpenGL.GL import glBegin
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 import sys
-ESCAPE = '\033'
 
 maze1 = [[0 for x in range(20)] for y in range(20)]
 maze2 = [[0 for x in range(20)] for y in range(20)]
 maze3 = [[0 for x in range(20)] for y in range(20)]
 maze4 = [[0 for x in range(20)] for y in range(20)]
 pacmanRotate = 0
+
+
+def key_pressed(key, x, y):
+    if key == b'\033':
+        sys.exit()
+
 
 class Main:
     def draw(self):
@@ -83,63 +86,6 @@ class Main:
             glPopMatrix()
         glFlush()
 
-
-    def key_pressed(self, key, x, y):
-        """The function called whenever a key is pressed.
-        Note the use of Python tuples to pass in: (key, x, y)
-
-        :param args: string represented pushed key
-        """
-
-        if key == ESCAPE:
-            sys.exit()
-
-    def key_pressed_special(self, key, x, y):
-        """The function called whenever a key is pressed.
-        Note the use of Python tuples to pass in: (key, x, y)
-
-        :param args: integer represented pushed key
-        """
-        # działanie klawiszy w osobnej funkcji
-
-        if key == 100:
-            self.pacman.next_direction = solid_data.OPPOSITE_MOVES('W')
-
-        elif key == 102:
-            self.pacman.next_direction = solid_data.OPPOSITE_MOVES('E')
-
-        elif key == 101:
-            self.pacman.next_direction = solid_data.OPPOSITE_MOVES('N')
-
-        elif key == 103:
-            self.pacman.next_direction = solid_data.OPPOSITE_MOVES('S')
-
-    def key_pressed_special_up(self, key, x, y):
-        """"""
-        pass
-
-    def pacman_move(self):
-        """"""
-        directions = self.board.knots.get(
-            (self.pacman.x, self.pacman.z)
-        )
-        if not self.pacman.was_eaten:
-            if directions:
-                if self.pacman.next_direction in directions:
-                    self.pacman.direction = self.pacman.next_direction
-                    self.pacman.move()
-                elif self.pacman.direction in directions:
-                    self.pacman.move()
-                else:
-                    pass   # PacMan no moves
-
-            elif self.pacman.next_direction == op[self.pacman.direction]:
-                self.pacman.direction = self.pacman.next_direction
-                self.pacman.move()
-            else:
-                self.pacman.move()
-
-
     def InitGL(self):
         glClearColor(0.0, 0.0, 0.0, 0.0)
         glClearDepth(1.0)
@@ -165,43 +111,12 @@ def main():
     # glutMouseWheelFunc(MouseWheel)
     # glutMotionFunc(MouseWheelMotion)
     # Register the function called when the keyboard is pressed.
-    glutKeyboardFunc(start_game.key_pressed)
-    glutSpecialFunc(start_game.key_pressed_special)
-    glutSpecialUpFunc(start_game.key_pressed_special_up)
+    Call_pacman = pacman.PacMan(7.6, 0.4, 1)
+    glutKeyboardFunc(Call_pacman.key_pressed)
+    glutSpecialFunc(Call_pacman.key_pressed_special)
+    glutSpecialUpFunc(Call_pacman.key_pressed_special_up)
     start_game.InitGL()
     glutMainLoop()
 
 
 main()
-   # pacman key press
-'''
-    def key_pressed(self, *args, null):
-        if args[0] == b'':
-            sys.exit()
-        glutPostRedisplay()
-
-    def key_pressed_special(self, *args, null):
-
-        if args[0] == 100:
-            self.z -= self.step
-            self.rotate = 90
-
-        elif args[0] == 102:
-            self.z += self.step
-            self.rotate = 270
-
-        elif args[0] == 101:
-            self.x -= self.step
-            self.rotate = 180
-
-        elif args[0] == 103:
-            self.x += self.step
-            self.rotate = 0
-
-            self.x, self.z = round(self.x, 2), round(self.z, 2)
-
-        glutPostRedisplay()
-
-    def key_pressed_special_up(self,*args, null):
-        pass
-'''
