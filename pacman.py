@@ -1,62 +1,56 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-from solid_data import set_color
-
+import solid_data
 rangle = 0
 
 
 class PacMan:
 
-    def __init__(self, x1, y, z):
-        self.x1 = x1
+    def __init__(self, x, y, z):
+        self.x = x
         self.y = y
         self.z = z
+        self.direction = ''
+        self.next_direction = ''
+        self.radius = 0.5
+        self.rotate = 0
+        self.step = 0.1
+        self.color = 1, 1, 0
+        self.was_eaten = False
 
     def drawPacman(self):
         global rangle
         glPushMatrix()
         glColor3f(1, 1, 0.0)
-        glTranslatef(self.x1, self.y, self.z)  # drawPacman(self,x,y,z) elemen veremeyiz yanlış olur ok?
+        glTranslatef(self.x, self.y, self.z)  # drawPacman(self,x,y,z) elemen veremeyiz yanlış olur ok?
         glutSolidSphere(0.4, 20, 20)
         glRotate(rangle, 1, 1, 0)
         rangle += 0.05
 
         glPopMatrix()
 
-        # pacman key press
 
-    def key_pressed(self, *args):
-        if args[0] == b'\033':
-            sys.exit()
-        glutPostRedisplay()
+    def move(self):
 
-    def key_pressed_special_up(self, key, x, y):
-        """"""
-        pass
+        if self.direction == 'N':
+            self.z -= self.step
+            self.rotate = 0
 
-    def key_pressed_special(self, key, x, y):
-        global pacmanRotate
-        if key == 100:
-            x -= x
-            pacmanRotate = 90
+        elif self.direction == 'S':
+            self.z += self.step
+            self.rotate = 180
 
-        elif key == 102:
-            x += x
-            pacmanRotate = 270
+        elif self.direction == 'W':
+            self.x -= self.step
+            self.rotate = 90
 
-        elif key == 101:
-            y += y
-            pacmanRotate = 0
+        elif self.direction == 'E':
+            self.x += self.step
+            self.rotate = 270
 
-        elif key == 103:
-            y -= y
-            pacmanRotate = 180
-        else:
-            pass
-        x = round(x, 2)
+        self.x, self.z = round(self.x, 2), round(self.z, 2)
 
-        glutPostRedisplay()
 
     # gl.glBegin(gl.GL_TRIANGLE_FAN)
     # gl.glColor3f(0, 1, 0)

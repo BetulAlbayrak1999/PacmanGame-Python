@@ -10,7 +10,7 @@ from solid_data import MOVES, OPPOSITE_MOVES, set_color
 
 
 class Ghost(PacMan):
-    def __init__(self, pos_x, pos_z, direction, color):
+    def  __init__(self, pos_x, pos_z, direction, color):
         super().__init__(pos_x, pos_z)
 
         self.primary_color = color
